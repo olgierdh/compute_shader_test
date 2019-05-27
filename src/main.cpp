@@ -9,6 +9,7 @@
 #include <cassert>
 #include <iostream>
 
+#include "logger.hpp"
 
 struct application_data
 {
@@ -67,6 +68,7 @@ template < typename T, int N, typename TAllocator >
 constexpr void
 swap( static_array< T, N, TAllocator >& lhs, static_array< T, N, TAllocator >& rhs )
 {
+    log( "using swap!" );
     using std::swap;
     swap( lhs.m_data, rhs.m_data );
     swap( lhs.m_allocator, rhs.m_allocator );
@@ -232,7 +234,7 @@ void create_vk_instance( application_data& ad )
 
     if ( vkCreateInstance( &instance_create_info, nullptr, &ad.instance ) != VK_SUCCESS )
     {
-        std::cout << "Could not create Vulkan instance!" << std::endl;
+        log( "Could not create Vulkan instance!" );
         exit( -1 );
     }
 }
@@ -248,7 +250,7 @@ void enumerate_vk_devices( application_data& ad )
     ad.physical_devices = detail::enumerate( vkEnumeratePhysicalDevices, ad.instance );
     const auto count    = ad.physical_devices.size();
 
-    std::cout << "Found: " << count << " physical device(s)" << std::endl;
+    log( "Found: ", count, " physical device(s)" );
 
     ad.device_properties.resize( count );
     ad.device_features.resize( count );
@@ -262,9 +264,8 @@ void enumerate_vk_devices( application_data& ad )
         vkGetPhysicalDeviceProperties( d, &p );
         vkGetPhysicalDeviceFeatures( d, &f );
 
-        std::cout << p.deviceName << " api version: " << VK_VERSION_MAJOR( p.apiVersion )
-                  << "." << VK_VERSION_MINOR( p.apiVersion ) << "."
-                  << VK_VERSION_PATCH( p.apiVersion ) << std::endl;
+        log( p.deviceName, " api version: ", VK_VERSION_MAJOR( p.apiVersion ), ".",
+             VK_VERSION_MINOR( p.apiVersion ), ".", VK_VERSION_PATCH( p.apiVersion ) );
     }
 }
 
@@ -272,10 +273,10 @@ void enumerate_vk_extensions( application_data& ad )
 {
     ad.extension_names = detail::enumerate( SDL_Vulkan_GetInstanceExtensions, ad.window );
 
-    std::cout << "Instance extensions: " << std::endl;
+    log( "Instance extensions: " );
     for ( const char* e : ad.extension_names )
     {
-        std::cout << e << std::endl;
+        log( e );
     }
 }
 
@@ -294,11 +295,9 @@ void enumerate_vk_queue_families( application_data& ad )
             ad.selected_gfx_queue_idx = i;
         }
 
-        std::cout << "q: " << i
-                  << ( ( fp.queueFlags & VK_QUEUE_GRAPHICS_BIT ) ? " [grahics]" : "" )
-                  << ( ( fp.queueFlags & VK_QUEUE_TRANSFER_BIT ) ? " [transfer]" : "" )
-                  << ( ( fp.queueFlags & VK_QUEUE_COMPUTE_BIT ) ? " [compute]" : "" )
-                  << std::endl;
+        log( "q: ", i, ( ( fp.queueFlags & VK_QUEUE_GRAPHICS_BIT ) ? " [grahics]" : "" ),
+             ( ( fp.queueFlags & VK_QUEUE_TRANSFER_BIT ) ? " [transfer]" : "" ),
+             ( ( fp.queueFlags & VK_QUEUE_COMPUTE_BIT ) ? " [compute]" : "" ) );
     }
 }
 
@@ -329,11 +328,11 @@ void create_vk_logical_device( application_data& ad )
                                      &ad.logical_device );
     if ( res != VK_SUCCESS )
     {
-        std::cout << "Failed to create Vulkan Device!" << std::endl;
+        log( "Failed to create Vulkan Device!" );
         exit( -1 );
     }
 
-    std::cout << "Vulkan Device created!" << std::endl;
+    log( "Vulkan Device created!" );
 }
 
 void destroy_vk_logical_device( application_data& ad )
@@ -369,9 +368,9 @@ void choose_physical_device( application_data& ad )
     ad.selected_device     = ad.physical_devices[std::get< 1 >( scores[0] )];
     ad.selected_device_idx = std::get< 1 >( scores[0] );
 
-    std::cout << "Selected physical device: "
-              << ad.device_properties[ad.selected_device_idx].deviceName
-              << " score: " << std::get< 0 >( scores[0] ) << std::endl;
+    log( "Selected physical device: ",
+         ad.device_properties[ad.selected_device_idx].deviceName,
+         " score: ", std::get< 0 >( scores[0] ) );
 }
 
 void create_sdl_window( application_data& ad )
@@ -381,7 +380,7 @@ void create_sdl_window( application_data& ad )
 
     if ( ad.window == nullptr )
     {
-        std::cout << "Couldn't create window! %s\n" << SDL_GetError() << std::endl;
+        log( "Couldn't create window! ", SDL_GetError() );
         exit( -1 );
     }
 }
@@ -392,32 +391,19 @@ void destroy_sdl_window( application_data& ad )
     ad.window = nullptr;
 }
 
-using small_static_array = static_array< int, 32, stack_allocator< 1024 > >;
+static constexpr int64_t stack_size = 1024l * 1024l * 2l;
+template < int64_t N = stack_size > using saloc = stack_allocator< N >;
+using small_static_array = static_array< int, 512, saloc< stack_size > >;
 
 int main()
 {
-    stack_allocator< 1024 > al;
-    small_static_array sa( &al );
-    small_static_array sa1( &al );
-
-    for ( int64_t i = 0; i < 10; ++i )
-    {
-        sa.push_back( i );
-    }
-
-    for( int64_t i = 0; i < 10; ++i )
-    {
-        std::cout << sa[i] << std::endl;
-    }
-
-    sa = std::move( sa1 );
-
+    log( "Stack memory allocation: ", stack_size / ( 1024.0 * 1024.0 ) ); 
+    
     application_data ad;
 
     if ( SDL_Init( SDL_INIT_VIDEO ) < 0 )
     {
-        std::cout << "SDL could not initialize! SDL_Error = " << SDL_GetError()
-                  << std::endl;
+        log( "SDL could not initialize! SDL_Error = ", SDL_GetError() );
     }
     else
     {
@@ -448,8 +434,8 @@ int main()
     destroy_vk_instance( ad );
     destroy_sdl_window( ad );
     SDL_Quit();
-    
-    std::cout << "End" << std::endl;
+
+    log( "End" );
 
     return 0;
 }

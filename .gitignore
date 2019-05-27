@@ -2,5 +2,5 @@ obj/
 bin/
 Makefile
 *.make
-
+*.swp
 

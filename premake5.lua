@@ -9,7 +9,7 @@ project "VulkanTest"
     cppdialect "C++17"
     targetdir "bin/%{cfg.buildcfg}"
 
-    files { "inc/**.h", "src/**.cpp", "src/**.m" }
+    files { "inc/**.h", "inc/**.hpp", "src/**.cpp", "src/**.m" }
     includedirs { "inc", "${VULKAN_SDK}/include", "/Library/Frameworks/SDL2.framework/Headers" }
     libdirs { "${VULKAN_SDK}/lib" }
 
