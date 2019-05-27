@@ -391,14 +391,14 @@ void destroy_sdl_window( application_data& ad )
     ad.window = nullptr;
 }
 
-static constexpr int64_t stack_size = 1024l * 1024l * 2l;
+static constexpr int64_t stack_size             = 1024l * 1024l * 2l;
 template < int64_t N = stack_size > using saloc = stack_allocator< N >;
 using small_static_array = static_array< int, 512, saloc< stack_size > >;
 
 int main()
 {
-    log( "Stack memory allocation: ", stack_size / ( 1024.0 * 1024.0 ) ); 
-    
+    log( "Stack memory allocation: ", stack_size / ( 1024.0 * 1024.0 ) );
+
     application_data ad;
 
     if ( SDL_Init( SDL_INIT_VIDEO ) < 0 )
