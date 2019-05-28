@@ -4,4 +4,4 @@ Makefile
 *.make
 *.swp
 *.vim
-
+.vscode/
