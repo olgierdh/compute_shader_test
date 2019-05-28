@@ -13,19 +13,21 @@
 #include "stack_allocator.hpp"
 #include "static_array.hpp"
 
-static constexpr int64_t stack_size             = 1024l * 1024l * 2l;
+static constexpr int64_t stack_size             = 1024 * 1024 * 2;
 template < int64_t N = stack_size > using saloc = stack_allocator< N >;
-using small_static_array = static_array< int, 512, saloc< stack_size > >;
+template < typename T, int64_t N >
+using stack_static_array = static_array< T, N, saloc< stack_size > >;
 
 struct application_data
 {
     SDL_Window* window  = nullptr;
     VkInstance instance = nullptr;
-    std::vector< const char* > extension_names;
-    std::vector< VkPhysicalDevice > physical_devices;
-    std::vector< VkPhysicalDeviceProperties > device_properties;
-    std::vector< VkPhysicalDeviceFeatures > device_features;
-    std::vector< VkQueueFamilyProperties > queue_family_properties;
+    stack_allocator< stack_size > al;
+    stack_static_array< const char*, 32 > extension_names{&al};
+    stack_static_array< VkPhysicalDevice, 32 > physical_devices{&al};
+    stack_static_array< VkPhysicalDeviceProperties, 32 > device_properties{&al};
+    stack_static_array< VkPhysicalDeviceFeatures, 32 > device_features{&al};
+    stack_static_array< VkQueueFamilyProperties, 32 > queue_family_properties{&al};
     VkPhysicalDevice selected_device = nullptr;
     VkDevice logical_device          = nullptr;
     int32_t selected_device_idx      = -1;
@@ -85,11 +87,12 @@ template < typename T, int IdBits > struct handle
 
 namespace detail
 {
-    template < typename R, typename T, typename A0, typename... Args >
-    std::vector< T >
-    enumerate( R ( *fn )( A0, uint32_t*, T*, Args... ), A0 a0, Args&&... args )
+    template < int64_t N, typename R, typename T, typename A0, typename TAllocator,
+               typename... Args >
+    stack_static_array< T, N > enumerate( R ( *fn )( A0, uint32_t*, T*, Args... ), A0 a0,
+                                          TAllocator& al, Args&&... args )
     {
-        std::vector< T > ret;
+        stack_static_array< T, N > ret( &al );
         uint32_t count = 0;
         fn( a0, &count, nullptr, std::forward< Args >( args )... );
         ret.resize( count );
@@ -136,8 +139,9 @@ void destroy_vk_instance( application_data& ad )
 
 void enumerate_vk_devices( application_data& ad )
 {
-    ad.physical_devices = detail::enumerate( vkEnumeratePhysicalDevices, ad.instance );
-    const auto count    = ad.physical_devices.size();
+    ad.physical_devices =
+        detail::enumerate< 32 >( vkEnumeratePhysicalDevices, ad.instance, ad.al );
+    const auto count = ad.physical_devices.size();
 
     log( "Found: ", count, " physical device(s)" );
 
@@ -160,7 +164,8 @@ void enumerate_vk_devices( application_data& ad )
 
 void enumerate_vk_extensions( application_data& ad )
 {
-    ad.extension_names = detail::enumerate( SDL_Vulkan_GetInstanceExtensions, ad.window );
+    ad.extension_names =
+        detail::enumerate< 32 >( SDL_Vulkan_GetInstanceExtensions, ad.window, ad.al );
 
     log( "Instance extensions: " );
     for ( const char* e : ad.extension_names )
@@ -171,8 +176,8 @@ void enumerate_vk_extensions( application_data& ad )
 
 void enumerate_vk_queue_families( application_data& ad )
 {
-    ad.queue_family_properties =
-        detail::enumerate( vkGetPhysicalDeviceQueueFamilyProperties, ad.selected_device );
+    ad.queue_family_properties = detail::enumerate< 32 >(
+        vkGetPhysicalDeviceQueueFamilyProperties, ad.selected_device, ad.al );
 
     for ( uint32_t i = 0; i < ad.queue_family_properties.size(); ++i )
     {

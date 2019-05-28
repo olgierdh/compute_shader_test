@@ -26,7 +26,8 @@ template < int64_t N > class stack_allocator
         const int64_t current_address =
             reinterpret_cast< int64_t >( &m_ptr[m_current_size] );
         const int64_t aligned_address = aligned_size( current_address, alignment );
-        const int64_t new_size        = ( aligned_address - current_address ) + size;
+        const int64_t new_size =
+            m_current_size + ( aligned_address - current_address ) + size;
         assert( new_size < N );
         m_current_size = new_size;
         return reinterpret_cast< void* >( aligned_address );
