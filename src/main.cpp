@@ -10,6 +10,12 @@
 #include <iostream>
 
 #include "logger.hpp"
+#include "stack_allocator.hpp"
+#include "static_array.hpp"
+
+static constexpr int64_t stack_size             = 1024l * 1024l * 2l;
+template < int64_t N = stack_size > using saloc = stack_allocator< N >;
+using small_static_array = static_array< int, 512, saloc< stack_size > >;
 
 struct application_data
 {
@@ -24,123 +30,6 @@ struct application_data
     VkDevice logical_device          = nullptr;
     int32_t selected_device_idx      = -1;
     int32_t selected_gfx_queue_idx   = -1;
-};
-
-constexpr int64_t aligned_size( int64_t size, int64_t alignment )
-{
-    return ( size + alignment - 1 ) & ~( alignment - 1 );
-}
-
-template < int64_t N > class stack_allocator
-{
-  public:
-    constexpr stack_allocator()
-        : m_current_size{0}
-    {
-    }
-    constexpr stack_allocator( const stack_allocator& ) = delete;
-    constexpr stack_allocator& operator=( const stack_allocator& ) = delete;
-    constexpr stack_allocator( stack_allocator&& )                 = delete;
-    constexpr stack_allocator& operator=( stack_allocator&& ) = delete;
-
-  public:
-    constexpr void* allocate( int64_t size, int64_t alignment = alignof( void* ) )
-    {
-        const int64_t current_address =
-            reinterpret_cast< int64_t >( &m_ptr[m_current_size] );
-        const int64_t aligned_address = aligned_size( current_address, alignment );
-        const int64_t new_size        = ( aligned_address - current_address ) + size;
-        assert( new_size < N );
-        m_current_size = new_size;
-        return reinterpret_cast< void* >( aligned_address );
-    }
-
-    constexpr void free( void* ptr ) {}
-
-  private:
-    char m_ptr[N];
-    int64_t m_current_size;
-};
-
-template < typename T, int N, typename TAllocator > class static_array;
-
-template < typename T, int N, typename TAllocator >
-constexpr void
-swap( static_array< T, N, TAllocator >& lhs, static_array< T, N, TAllocator >& rhs )
-{
-    log( "using swap!" );
-    using std::swap;
-    swap( lhs.m_data, rhs.m_data );
-    swap( lhs.m_allocator, rhs.m_allocator );
-    swap( lhs.m_current_element, rhs.m_current_element );
-}
-
-template < typename T, int N, typename TAllocator > class static_array
-{
-  public:
-    constexpr static_array( TAllocator* a )
-        : m_data{nullptr}
-        , m_allocator{a}
-        , m_current_element{0}
-    {
-        assert( a != nullptr );
-        m_data = reinterpret_cast< T* >( a->allocate( N * sizeof( T ), alignof( T ) ) );
-    }
-
-    ~static_array()
-    {
-        m_allocator->free( m_data );
-        m_data            = nullptr;
-        m_current_element = 0;
-    }
-
-    constexpr static_array( static_array&& other )
-        : m_data{std::exchange( other.m_data, nullptr )}
-        , m_allocator{std::exchange( other.m_allocator, nullptr )}
-        , m_current_element{std::exchange( other.m_current_element, 0 )}
-    {
-    }
-
-    constexpr static_array& operator=( static_array&& other )
-    {
-        using std::swap;
-        static_array __tmp = std::move( other );
-        swap( *this, __tmp );
-        return *this;
-    }
-
-    constexpr static_array( const static_array& ) = delete;
-    constexpr static_array& operator=( const static_array& ) = delete;
-
-  public:
-    constexpr friend void swap<>( static_array& lhs, static_array& rhs );
-
-  public:
-    constexpr T& operator[]( int64_t index )
-    {
-        assert( index < m_current_element );
-        assert( index >= 0 );
-        return m_data[index];
-    }
-
-    constexpr const T& operator[]( int64_t index ) const
-    {
-        assert( index < m_current_element );
-        assert( index >= 0 );
-        return m_data[index];
-    }
-
-    void push_back( T&& v )
-    {
-        assert( m_current_element < N );
-        new ( &m_data[m_current_element] ) T{std::move( v )};
-        m_current_element += 1;
-    }
-
-  private:
-    T* m_data;
-    TAllocator* m_allocator;
-    int64_t m_current_element;
 };
 
 struct array_view
@@ -390,10 +279,6 @@ void destroy_sdl_window( application_data& ad )
     SDL_DestroyWindow( ad.window );
     ad.window = nullptr;
 }
-
-static constexpr int64_t stack_size             = 1024l * 1024l * 2l;
-template < int64_t N = stack_size > using saloc = stack_allocator< N >;
-using small_static_array = static_array< int, 512, saloc< stack_size > >;
 
 int main()
 {
