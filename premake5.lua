@@ -10,10 +10,10 @@ project "VulkanTest"
     targetdir "bin/%{cfg.buildcfg}"
 
     files { "inc/**.h", "inc/**.hpp", "src/**.cpp", "src/**.m" }
-    includedirs { "inc", "${VULKAN_SDK}/include", "/Library/Frameworks/SDL2.framework/Headers" }
+    includedirs { "inc", "${VULKAN_SDK}/include"  }
     libdirs { "${VULKAN_SDK}/lib" }
 
-    links { "vulkan", "MoltenVK", "SDL2.framework"  }
+    links { "MoltenVK", "vulkan.1", "SDL2.framework"  }
 
     filter "configurations:Debug"
         defines { "DEBUG" }
@@ -22,6 +22,11 @@ project "VulkanTest"
     filter "configurations:Release"
         defines { "NDEBUG" }
         optimize "On"
+
+    filter { "system:macosx" }
+        libdirs { "ext/macos/Frameworks" }
+        includedirs { "ext/macos/Frameworks/SDL2.framework/headers" }
+        linkoptions { "-rpath @executable_path/Frameworks", "-rpath @executable_path/../Frameworks", "-rpath @executable_path/../../ext/macos/Frameworks", "-F ext/macos/Frameworks/" }
 
     filter { "system:macosx", "configurations:Debug" }
         buildoptions { "-fsanitize=address"
