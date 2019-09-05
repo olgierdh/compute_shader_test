@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "logger.hpp"
+#include "stack_allocator.hpp"
 
 template < typename T, int N, typename TAllocator > class static_array;
 
@@ -10,7 +11,6 @@ template < typename T, int N, typename TAllocator >
 constexpr void
 swap( static_array< T, N, TAllocator >& lhs, static_array< T, N, TAllocator >& rhs )
 {
-    log( "using swap!" );
     using std::swap;
     swap( lhs.m_data, rhs.m_data );
     swap( lhs.m_allocator, rhs.m_allocator );
@@ -87,25 +87,13 @@ template < typename T, int N, typename TAllocator > class static_array
 
     constexpr int64_t size() const { return m_current_element; }
 
-    constexpr T* begin()
-    {
-        return &m_data[0];
-    }
+    constexpr T* begin() { return &m_data[0]; }
 
-    constexpr T* end()
-    {
-        return &m_data[m_current_element];
-    }
+    constexpr T* end() { return &m_data[m_current_element]; }
 
-    constexpr T* data()
-    {
-        return m_data;
-    }
+    constexpr T* data() { return m_data; }
 
-    constexpr const T* data() const 
-    {
-        return m_data;
-    }
+    constexpr const T* data() const { return m_data; }
 
   private:
     T* m_data;
