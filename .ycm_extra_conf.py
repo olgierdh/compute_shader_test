@@ -53,7 +53,7 @@ flags = [
     '-I', './jh/src/',
     '-I', './inc/',
     '-I', '/Users/olgierdh/workspace/tools/vulkansdk-macos-1.1.106.0/macOS/include/',
-    '-isystem', '/Library/Frameworks/SDL2.framework/Headers/',
+    '-isystem', './ext/macos/Frameworks/SDL2.framework/Headers/',
 ]
 
 
