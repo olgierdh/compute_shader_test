@@ -9,11 +9,9 @@ project "VulkanTest"
     cppdialect "C++17"
     targetdir "bin/%{cfg.buildcfg}"
 
-    files { "inc/**.h", "inc/**.hpp", "src/**.cpp", "src/**.m" }
+    files { "inc/**.h", "inc/**.hpp", "src/**.cpp" }
     includedirs { "inc", "${VULKAN_SDK}/include"  }
     libdirs { "${VULKAN_SDK}/lib" }
-
-    links { "MoltenVK", "vulkan.1", "SDL2.framework"  }
 
     filter "configurations:Debug"
         defines { "DEBUG" }
@@ -23,7 +21,11 @@ project "VulkanTest"
         defines { "NDEBUG" }
         optimize "On"
 
+    filter { "system:linux" }
+        links { "vulkan", "SDL2" }
+
     filter { "system:macosx" }
+        links { "MoltenVK", "vulkan.1", "SDL2.framework"  }
         libdirs { "ext/macos/Frameworks" }
         includedirs { "ext/macos/Frameworks/SDL2.framework/headers" }
         linkoptions { "-rpath @executable_path/Frameworks", "-rpath @executable_path/../Frameworks", "-rpath @executable_path/../../ext/macos/Frameworks", "-F ext/macos/Frameworks/" }
