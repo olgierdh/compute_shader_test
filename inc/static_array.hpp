@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <cassert>
+#include <utility>
 
 #include "logger.hpp"
 #include "stack_allocator.hpp"
