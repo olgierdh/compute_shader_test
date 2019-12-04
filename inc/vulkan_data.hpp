@@ -7,8 +7,11 @@
 
 template < typename TAlloc > struct vulkan_data
 {
+    static auto constexpr data_size = 32;
+
     vulkan_data( TAlloc* al )
-        : extension_names{al}
+        : al{al}
+        , extension_names{al}
         , physical_devices{al}
         , device_properties{al}
         , device_features{al}
@@ -16,15 +19,18 @@ template < typename TAlloc > struct vulkan_data
     {
     }
 
-    VkInstance instance              = nullptr;
-    VkPhysicalDevice selected_device = nullptr;
-    VkDevice logical_device          = nullptr;
-    VkQueue graphics_queue           = nullptr;
-    int32_t selected_device_idx      = -1;
-    int32_t selected_gfx_queue_idx   = -1;
-    static_array< const char*, 32, TAlloc > extension_names;
-    static_array< VkPhysicalDevice, 32, TAlloc > physical_devices;
-    static_array< VkPhysicalDeviceProperties, 32, TAlloc > device_properties;
-    static_array< VkPhysicalDeviceFeatures, 32, TAlloc > device_features;
-    static_array< VkQueueFamilyProperties, 32, TAlloc > queue_family_properties;
+    VkInstance instance                      = nullptr;
+    VkDebugUtilsMessengerEXT debug_messanger = nullptr;
+    VkPhysicalDevice selected_device         = nullptr;
+    VkDevice logical_device                  = nullptr;
+    VkQueue graphics_queue                   = nullptr;
+    TAlloc* al                               = nullptr;
+    int32_t selected_device_idx              = -1;
+    int32_t selected_gfx_queue_idx           = -1;
+    int32_t selected_compute_queue_ids       = -1;
+    static_array< const char*, data_size, TAlloc > extension_names;
+    static_array< VkPhysicalDevice, data_size, TAlloc > physical_devices;
+    static_array< VkPhysicalDeviceProperties, data_size, TAlloc > device_properties;
+    static_array< VkPhysicalDeviceFeatures, data_size, TAlloc > device_features;
+    static_array< VkQueueFamilyProperties, data_size, TAlloc > queue_family_properties;
 };

@@ -6,9 +6,9 @@
 #include "logger.hpp"
 #include "stack_allocator.hpp"
 
-template < typename T, int N, typename TAllocator > class static_array;
+template < typename T, int64_t N, typename TAllocator > class static_array;
 
-template < typename T, int N, typename TAllocator >
+template < typename T, int64_t N, typename TAllocator >
 constexpr void
 swap( static_array< T, N, TAllocator >& lhs, static_array< T, N, TAllocator >& rhs )
 {
@@ -18,7 +18,7 @@ swap( static_array< T, N, TAllocator >& lhs, static_array< T, N, TAllocator >& r
     swap( lhs.m_current_element, rhs.m_current_element );
 }
 
-template < typename T, int N, typename TAllocator > class static_array
+template < typename T, int64_t N, typename TAllocator > class static_array
 {
   public:
     constexpr static_array( TAllocator* a )
@@ -87,6 +87,8 @@ template < typename T, int N, typename TAllocator > class static_array
     }
 
     constexpr int64_t size() const { return m_current_element; }
+
+    constexpr int64_t capacity() const { return N; }
 
     constexpr T* begin() { return &m_data[0]; }
 

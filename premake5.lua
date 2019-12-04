@@ -12,6 +12,7 @@ project "VulkanTest"
     files { "inc/**.h", "inc/**.hpp", "src/**.cpp" }
     includedirs { "inc", "${VULKAN_SDK}/include"  }
     libdirs { "${VULKAN_SDK}/lib" }
+    toolset "clang"
 
     filter "configurations:Debug"
         defines { "DEBUG" }
@@ -30,10 +31,12 @@ project "VulkanTest"
         includedirs { "ext/macos/Frameworks/SDL2.framework/headers" }
         linkoptions { "-rpath @executable_path/Frameworks", "-rpath @executable_path/../Frameworks", "-rpath @executable_path/../../ext/macos/Frameworks", "-F ext/macos/Frameworks/" }
 
-    filter { "system:macosx", "configurations:Debug" }
+    filter { "system:macosx or system:linux", "configurations:Debug" }
         buildoptions { "-fsanitize=address"
                     , "-fsanitize-address-use-after-scope"
                     , "-fno-omit-frame-pointer"
                     , "-fno-optimize-sibling-calls" }
         linkoptions { "-fsanitize=address" }
-
+    
+    filter { "system:macosx or system:linux" }
+        buildoptions{ "-Wall", "-Wextra" }

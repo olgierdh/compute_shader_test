@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <cassert>
 #include <iostream>
+#include <cassert>
 
 #include "logger.hpp"
 #include "stack_allocator.hpp"
@@ -35,6 +36,7 @@ int main()
         application app;
         app.initialize();
         app.run();
+        app.deinitialize();
     }
     // application_data ad;
 
