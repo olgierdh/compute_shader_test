@@ -1,0 +1,14 @@
+obj/
+bin/
+Makefile
+*.make
+*.swp
+*.vim
+.vscode/
+.idea/*
+generated/*.*
+!*.gitkeep
+.vs/*
+*.vcxproj*
+*.sln
+
