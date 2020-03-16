@@ -378,14 +378,16 @@ template < typename TAlloc > void enumerate_vk_queue_families( vulkan_data< TAll
 
         if ( vd.selected_gfx_queue_idx == -1 )
         {
-            const bool has_graphics_bit = fp.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+            const bool has_graphics_bit =
+                ( fp.queueFlags & VK_QUEUE_GRAPHICS_BIT ) == VK_QUEUE_GRAPHICS_BIT;
 
             if ( has_graphics_bit && surface_presentation_supported )
                 vd.selected_gfx_queue_idx = i;
         }
 
         if ( ( vd.selected_compute_queue_ids == -1 )
-             && ( fp.queueFlags & VK_QUEUE_COMPUTE_BIT ) )
+             && ( fp.queueFlags & VK_QUEUE_COMPUTE_BIT ) == VK_QUEUE_COMPUTE_BIT
+             && ( fp.queueFlags & VK_QUEUE_GRAPHICS_BIT ) != VK_QUEUE_GRAPHICS_BIT )
         {
             vd.selected_compute_queue_ids = i;
         }
@@ -394,6 +396,20 @@ template < typename TAlloc > void enumerate_vk_queue_families( vulkan_data< TAll
              ( ( fp.queueFlags & VK_QUEUE_TRANSFER_BIT ) ? " [transfer]" : "" ),
              ( ( fp.queueFlags & VK_QUEUE_COMPUTE_BIT ) ? " [compute]" : "" ),
              ( ( surface_presentation_supported ) ? " [presentation]" : "" ) );
+    }
+
+    if ( vd.selected_compute_queue_ids == -1 )
+    {
+        log( "No dedicated compute queue found! Looking for combined one!" );
+        for ( uint32_t i = 0; i < vd.queue_family_properties.size(); ++i )
+        {
+            VkQueueFamilyProperties& fp = vd.queue_family_properties[i];
+            if ( ( vd.selected_compute_queue_ids == -1 )
+                 && ( fp.queueFlags & VK_QUEUE_COMPUTE_BIT ) == VK_QUEUE_COMPUTE_BIT )
+            {
+                vd.selected_compute_queue_ids = i;
+            }
+        }
     }
 }
 
@@ -405,8 +421,6 @@ void create_vk_logical_device( vulkan_data< TAlloc >& vd,
                        "Gfx queue has not been selected!" );
     NEO_ASSERT_ALWAYS( vd.selected_compute_queue_ids >= 0,
                        "Compute queue has not been selected!" );
-    NEO_ASSERT_ALWAYS( vd.selected_compute_queue_ids == vd.selected_gfx_queue_idx,
-                       "Two different queues selected for gfx and compute operations!" );
 
     float queue_priorities[] = {1.0f};
 
