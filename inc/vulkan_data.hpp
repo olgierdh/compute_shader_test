@@ -53,6 +53,7 @@ template < typename TAlloc > struct vulkan_data
     VkPhysicalDevice selected_device         = nullptr;
     VkDevice logical_device                  = nullptr;
     VkQueue graphics_queue                   = nullptr;
+    VkQueue compute_queue                    = nullptr;
     VkCommandPool pool_command_buffers       = VkCommandPool{};
     VkSurfaceKHR surface                     = nullptr;
     TAlloc* al                               = nullptr;
@@ -137,7 +138,8 @@ template < typename TAlloc > struct vulkan_data
 
         vkGetPhysicalDeviceMemoryProperties2( selected_device, &memory_properties2 );
 
-        for ( uint32_t i = 0; i < memory_properties2.memoryProperties.memoryHeapCount; ++i )
+        for ( uint32_t i = 0; i < memory_properties2.memoryProperties.memoryHeapCount;
+              ++i )
         {
             const bool is_device =
                 ( ( memory_properties2.memoryProperties.memoryHeaps[i].flags

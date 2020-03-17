@@ -424,16 +424,18 @@ void create_vk_logical_device( vulkan_data< TAlloc >& vd,
 
     float queue_priorities[] = {1.0f};
 
-    VkDeviceQueueCreateInfo queue_create_info{
-        VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,           nullptr, 0,
-        static_cast< uint32_t >( vd.selected_gfx_queue_idx ), 1,       queue_priorities};
+    VkDeviceQueueCreateInfo queue_create_info[] = {
+        {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0,
+         static_cast< uint32_t >( vd.selected_gfx_queue_idx ), 1, queue_priorities},
+        {VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0,
+         static_cast< uint32_t >( vd.selected_compute_queue_ids ), 1, queue_priorities}};
 
     VkDeviceCreateInfo device_create_info{
         VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         nullptr,
         0,
-        1,
-        &queue_create_info,
+        2,
+        queue_create_info,
         0,
         nullptr,
         static_cast< uint32_t >( required_device_extensions.size() ),
@@ -463,6 +465,17 @@ template < typename TAlloc > void create_vk_queues( vulkan_data< TAlloc >& vd )
     }
 
     log( "Graphics queue created" );
+
+    vkGetDeviceQueue( vd.logical_device, vd.selected_compute_queue_ids, 0,
+                      &vd.compute_queue );
+
+    if ( vd.compute_queue == nullptr )
+    {
+        log( "Failed to create compute queue!" );
+        exit( -1 );
+    }
+
+    log( "Compute queue created" );
 }
 
 template < typename TAlloc > void destroy_vk_logical_device( vulkan_data< TAlloc >& vd )
